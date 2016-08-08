@@ -1,44 +1,57 @@
-public protocol Sending: AsyncSending {
-    func send(_ data: Data, timingOut deadline: Double) throws
-    func flush(timingOut deadline: Double) throws
+public protocol Closable {
+    var closed: Bool { get }
+    func close() throws
 }
 
-public protocol Receiving: AsyncReceiving {
-    func receive(upTo byteCount: Int, timingOut deadline: Double) throws -> Data
+public enum ClosableError: Error {
+    case alreadyClosed
 }
 
-public protocol SendingStream: Closable, Sending {}
-public protocol ReceivingStream: Closable, Receiving {}
-public protocol Stream: SendingStream, ReceivingStream {}
-
-extension Sending {
-    public func send(_ data: Data, timingOut deadline: Double, completion: ((Void) throws -> Void) -> Void) {
-        completion { try self.send(data, timingOut: deadline) }
-    }
-
-    public func flush(timingOut deadline: Double, completion: ((Void) throws -> Void) -> Void) {
-        completion { try self.flush(timingOut: deadline) }
-    }
+public protocol Writable: AsyncWritable {
+    func write(_ data: Data, deadline: Double) throws
+    func flush(deadline: Double) throws
 }
 
-extension Sending {
-    public func send(_ data: Data) throws {
-        try send(data, timingOut: .never)
+extension Writable {
+    public func write(_ data: Data) throws {
+        try write(data, deadline: .never)
     }
-    
+
+    public func write(_ convertible: DataConvertible, deadline: Double = .never) throws {
+        try write(convertible.data, deadline: deadline)
+    }
+
     public func flush() throws {
-        try flush(timingOut: .never)
+        try flush(deadline: .never)
     }
 }
 
-extension Receiving {
-    public func receive(upTo byteCount: Int, timingOut deadline: Double, completion: ((Void) throws -> Data) -> Void) {
-        completion { try self.receive(upTo: byteCount, timingOut: deadline) }
+extension Writable {
+    public func write(_ data: Data, deadline: Double, completion: @escaping ((Void) throws -> Void) -> Void) {
+        completion { try self.write(data, deadline: deadline) }
+    }
+
+    public func flush(deadline: Double, completion: @escaping ((Void) throws -> Void) -> Void) {
+        completion { try self.flush(deadline: deadline) }
     }
 }
 
-extension Receiving {
-    public func receive(upTo byteCount: Int) throws -> Data {
-        return try receive(upTo: byteCount, timingOut: .never)
+public protocol Readable: AsyncReadable {
+    func read(upTo byteCount: Int, deadline: Double) throws -> Data
+}
+
+extension Readable {
+    public func read(upTo byteCount: Int) throws -> Data {
+        return try read(upTo: byteCount, deadline: .never)
     }
 }
+
+extension Readable {
+    public func read(upTo byteCount: Int, deadline: Double, completion: @escaping ((Void) throws -> Data) -> Void) {
+        completion { try self.read(upTo: byteCount, deadline: deadline) }
+    }
+}
+
+public protocol OutputStream: Closable, Writable, AsyncOutputStream {}
+public protocol InputStream: Closable, Readable, AsyncInputStream {}
+public protocol Stream: OutputStream, InputStream, AsyncStream {}

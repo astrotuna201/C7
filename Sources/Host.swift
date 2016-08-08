@@ -1,9 +1,9 @@
 public protocol Host {
-    func accept(timingOut deadline: Double) throws -> Stream
+    func accept(deadline: Double) throws -> Stream
 }
 
 extension Host {
-    func accept() throws -> Stream {
-        return try accept(timingOut: .never)
+    public func accept() throws -> Stream {
+        return try accept(deadline: .never)
     }
 }

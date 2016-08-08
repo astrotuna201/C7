@@ -1,9 +1,9 @@
 public protocol Connection: Stream {
-    func open(timingOut deadline: Double) throws
+    func open(deadline: Double) throws
 }
 
 extension Connection {
     public func open() throws {
-        try open(timingOut: .never)
+        try open(deadline: .never)
     }
 }

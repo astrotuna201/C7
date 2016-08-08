@@ -184,7 +184,7 @@ extension String: DataConvertible {
         }
     #else
         public init(data: Data) throws {
-            struct Error: ErrorProtocol {}
+            struct Error: Error {}
             var string = ""
             var decoder = UTF8()
             var generator = data.generate()

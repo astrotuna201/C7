@@ -3,17 +3,14 @@ public final class Drain: DataRepresentable, Stream {
     public var closed = false
 
     public var data: Data {
-        if !closed {
-            return buffer
-        }
-        return []
+        return buffer
     }
 
     public convenience init() {
-        self.init(for: [])
+        self.init(buffer: [])
     }
 
-    public init(for stream: ReceivingStream, timingOut deadline: Double = .never) {
+    public init(stream: InputStream, deadline: Double = .never) {
         var buffer: Data = []
 
         if stream.closed {
@@ -21,7 +18,7 @@ public final class Drain: DataRepresentable, Stream {
         }
 
         while !stream.closed {
-            if let chunk = try? stream.receive(upTo: 1024, timingOut: deadline) {
+            if let chunk = try? stream.read(upTo: 1024, deadline: deadline) {
                 buffer.bytes += chunk.bytes
             } else {
                 break
@@ -31,12 +28,12 @@ public final class Drain: DataRepresentable, Stream {
         self.buffer = buffer
     }
 
-    public init(for buffer: Data) {
+    public init(buffer: Data) {
         self.buffer = buffer
     }
 
-    public convenience init(for buffer: DataRepresentable) {
-        self.init(for: buffer.data)
+    public convenience init(buffer: DataRepresentable) {
+        self.init(buffer: buffer.data)
     }
 
     public func close() throws {
@@ -46,23 +43,21 @@ public final class Drain: DataRepresentable, Stream {
         closed = true
     }
 
-    public func receive(upTo byteCount: Int, timingOut deadline: Double = .never) throws -> Data {
+    public func read(upTo byteCount: Int, deadline: Double = .never) throws -> Data {
         if byteCount >= buffer.count {
             try close()
             return buffer
         }
 
-        let data = buffer[0..<byteCount]
+        let data = buffer.prefix(upTo: byteCount)
         buffer.removeFirst(byteCount)
 
         return Data(data)
     }
 
-    public func send(_ data: Data, timingOut deadline: Double = .never) throws {
+    public func write(_ data: Data, deadline: Double = .never) throws {
         buffer += data.bytes
     }
 
-    public func flush(timingOut deadline: Double = .never) throws {
-        buffer = []
-    }
+    public func flush(deadline: Double = .never) throws {}
 }
