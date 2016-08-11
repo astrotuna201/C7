@@ -1,4 +1,5 @@
 public final class AsyncDrain: DataRepresentable, AsyncStream {
+
     var buffer: Data = []
     public var closed = false
     
@@ -58,7 +59,7 @@ public final class AsyncDrain: DataRepresentable, AsyncStream {
         closed = true
     }
     
-    public func receive(upTo byteCount: Int, timingOut deadline: Double = .never, completion: ((Void) throws -> Data) -> Void) {
+    public func receive(upTo byteCount: Int, timingOut deadline: Double = .never, completion: @escaping ((Void) throws -> Data) -> Void) {
         if byteCount >= buffer.count {
             completion { [unowned self] in
                 try self.close()
@@ -75,12 +76,12 @@ public final class AsyncDrain: DataRepresentable, AsyncStream {
         }
     }
     
-    public func send(_ data: Data, timingOut deadline: Double = .never, completion: ((Void) throws -> Void) -> Void) {
+    public func send(_ data: Data, timingOut deadline: Double = .never, completion: @escaping ((Void) throws -> Void) -> Void) {
         buffer += data.bytes
         completion {}
     }
     
-    public func flush(timingOut deadline: Double = .never, completion: ((Void) throws -> Void) -> Void) {
+    public func flush(timingOut deadline: Double = .never, completion: @escaping ((Void) throws -> Void) -> Void) {
         buffer = []
         completion {}
     }
